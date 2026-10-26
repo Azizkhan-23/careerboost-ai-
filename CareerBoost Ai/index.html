@@ -1,0 +1,728 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Career Boost AI — Resume Analyzer</title>
+
+<style>
+:root {
+  --primary: #1645b2;
+  --accent: #098f01;
+  --bg: #9dfa07;
+  --card: #f9fbfb;
+  --text: #536b91;
+  --muted: #b7090c;
+  --success: #15803d;
+  --warning: #f59e0b;
+  --danger: #dc2626;
+  --border: #10366e;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+header {
+  background: linear-gradient(135deg, var(--primary), #1e293b);
+  color: white;
+  padding: 40px 20px;
+  text-align: center;
+}
+header h1 { font-size: 36px; font-weight: 800; margin-bottom: 8px; }
+header h1 span { color: #86efac; }
+header p { max-width: 550px; margin: auto; }
+.badge {
+  display: inline-block;
+  background: var(--accent);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-top: 12px;
+}
+.container { max-width: 1100px; margin: auto; padding: 30px 20px; }
+.input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+.input-card, .result-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px #0000000a;
+}
+.input-card h3 { font-size: 15px; margin-bottom: 12px; }
+.input-card h3 .icon {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  background: #fef3c7;
+  border-radius: 8px;
+  margin-right: 6px;
+}
+textarea {
+  width: 100%;
+  min-height: 180px;
+  padding: 14px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  resize: vertical;
+  background: #fafafa;
+}
+textarea:focus { outline: none; border-color: var(--accent); }
+.resume-upload {
+  margin-top: 14px;
+  padding: 14px;
+  background: #fff7ed;
+  border: 1px dashed var(--accent);
+  border-radius: 10px;
+}
+.resume-upload label { display: block; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+.resume-upload input { width: 100%; }
+.resume-upload p { margin-top: 8px; font-size: 12px; overflow-wrap: anywhere; }
+.analyze-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--accent), #087500);
+  color: white;
+  border: 0;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.analyze-btn:disabled { opacity: .6; cursor: wait; }
+.tips-box {
+  background: #f4f0ff;
+  border: 1px solid #bae6fd;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 20px 0;
+  font-size: 13px;
+  color: #0c4a6e;
+}
+.results { margin-top: 30px; }
+.result-card h4 { font-size: 14px; margin-bottom: 14px; text-transform: uppercase; }
+.score-card { text-align: center; padding: 30px 24px; }
+.score-circle {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  border: 6px solid var(--score-color, var(--accent));
+}
+.score-number { font-size: 48px; font-weight: 800; line-height: 1; }
+.score-label { font-size: 12px; margin-top: 4px; }
+.score-message { font-size: 14px; }
+.keyword-list, .skill-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.keyword {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  border: 1px solid #fde68a;
+}
+.insight-list { list-style: none; }
+.insight-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid #cbd5e1;
+  font-size: 14px;
+}
+.loading { text-align: center; padding: 40px; }
+.spinner {
+  width: 40px; height: 40px;
+  border: 4px solid #cbd5e1;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-box {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin: 20px 0;
+  overflow-wrap: anywhere;
+}
+
+/* Advanced skill gap section */
+.skill-gap-section {
+  margin-top: 28px;
+  padding: 24px;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  background: #111827;
+  color: #f8fafc;
+}
+.skill-gap-section[hidden] { display: none; }
+.skill-gap-section h2 { font-size: 25px; margin-bottom: 8px; }
+.skill-gap-section h3 { margin-top: 24px; margin-bottom: 12px; }
+.skill-gap-subtitle { color: #cbd5e1; }
+.skill-chip {
+  padding: 7px 12px;
+  border-radius: 20px;
+  background: #164e63;
+  color: #cffafe;
+  font-size: 14px;
+}
+.skill-gap-card {
+  margin: 10px 0;
+  padding: 14px;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  background: #1f2937;
+}
+.skill-gap-card h4 { margin-bottom: 8px; }
+.skill-gap-card p { margin: 8px 0; overflow-wrap: anywhere; }
+.priority-high { color: #fca5a5; }
+.priority-medium { color: #fcd34d; }
+.priority-low { color: #86efac; }
+.skill-gap-section li { margin: 8px 0 8px 20px; }
+footer {
+  text-align: center;
+  padding: 30px 20px;
+  color: var(--muted);
+  font-size: 13px;
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+}
+footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+@media (max-width: 768px) {
+  .input-grid { grid-template-columns: 1fr; }
+  header h1 { font-size: 28px; }
+  .input-card, .result-card, .skill-gap-section { padding: 18px; }
+}
+</style>
+</head>
+
+<body>
+<header>
+  <h1>Career Boost <span>AI</span></h1>
+  <p>Paste your resume or upload a file and add a job description. Get AI-powered feedback to improve your resume.</p>
+  <div class="badge">Your Skills. Your Potential. Your Next Step</div>
+</header>
+
+<main class="container">
+  <div class="input-grid">
+    <div class="input-card">
+      <h3><span class="icon">📄</span>Your Resume</h3>
+      <textarea id="resume" placeholder="Paste your full resume text here..."></textarea>
+      <div class="resume-upload">
+        <label for="resumeFile">📎 Or upload your resume</label>
+        <input type="file" id="resumeFile" accept=".txt,.pdf,.docx">
+        <p id="uploadStatus">Supported formats: PDF, DOCX, TXT</p>
+      </div>
+    </div>
+
+    <div class="input-card">
+      <h3><span class="icon">💼</span>Job Description</h3>
+      <textarea id="jobDesc" placeholder="Paste the complete job description here..."></textarea>
+    </div>
+  </div>
+
+  <button id="analyzeBtn" class="analyze-btn" type="button" onclick="analyzeResume()">
+    🚀 Analyze Resume
+  </button>
+
+  <div class="tips-box">
+    <strong>Pro Tip:</strong> Upload your resume or paste its text. Add the complete job description for a more useful comparison.
+  </div>
+
+  <div id="results" class="results"></div>
+
+  <!-- Advanced Skill Gap Analysis -->
+  <section id="skillGapSection" class="skill-gap-section" hidden>
+    <h2>🧭 Advanced Skill Gap Analysis</h2>
+    <p class="skill-gap-subtitle">Discover your strengths, missing skills, and next learning steps.</p>
+
+    <h3>✅ Matched Skills</h3>
+    <div id="matchedSkills" class="skill-list"></div>
+
+    <h3>📚 Skills to Develop</h3>
+    <div id="skillGaps"></div>
+
+    <h3>🗺️ Your Learning Plan</h3>
+    <ul id="learningPlan"></ul>
+
+    <h3>💡 Recommended Projects</h3>
+    <ul id="projectIdeas"></ul>
+  </section>
+</main>
+
+<footer>
+  <p>Built by <strong>Mohammed Aziz Khan</strong> · ApnoAI AI/ML Intern · October 2026</p>
+  <p style="margin-top: 6px;">Powered by Google Gemini API · <a href="https://apnoai.com">apnoai.com</a></p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+
+<script>
+/* =========================================
+   1. GEMINI API CONFIGURATION
+
+   Paste your NEW API key between the quotes.
+   Do not share or publish the key.
+   ========================================= */
+
+const GEMINI_API_KEY = "";
+const GEMINI_MODEL = "gemini-3.8-flash";
+
+/* =========================================
+   2. SYSTEM PROMPT
+   ========================================= */
+
+const SYSTEM_PROMPT = `
+You are an expert AI Career Advisor.
+
+Analyze the candidate's resume against the provided job description.
+
+Evaluate:
+1. ATS match score out of 100.
+2. Resume strengths.
+3. Missing job-related keywords.
+4. Specific resume improvements.
+5. Overall match summary.
+6. Advanced skill gap analysis.
+
+For skill gap analysis:
+- matched_skills: array of skills supported by the resume and relevant to the job.
+- skill_gaps: array of objects. Each object must contain:
+  skill, priority, reason, recommendation.
+- priority must be "High", "Medium", or "Low".
+- learning_plan: array of practical learning steps.
+- project_ideas: array of project suggestions relevant to the target role.
+
+Never invent qualifications, experience, or skills.
+A missing resume keyword does not prove that the candidate lacks that skill.
+Treat the ATS score as an estimate, not a guarantee.
+Use simple, practical language suitable for students and fresh graduates.
+Prioritize skill gaps based on the job description.
+
+Return ONLY one valid JSON object. Do not include Markdown fences or extra text.
+Use exactly this structure:
+
+{
+  "ats_score": 75,
+  "summary": "A short summary of the resume match.",
+  "strengths": [
+    "A relevant strength from the resume."
+  ],
+  "missing_keywords": [
+    "A relevant keyword not demonstrated in the resume."
+  ],
+  "improvements": [
+    "A practical suggestion to improve the resume."
+  ],
+  "matched_skills": [
+    "Python",
+    "Problem solving"
+  ],
+  "skill_gaps": [
+    {
+      "skill": "Machine Learning",
+      "priority": "High",
+      "reason": "The job description requires practical Machine Learning experience.",
+      "recommendation": "Build and document a small supervised learning project."
+    }
+  ],
+  "learning_plan": [
+    "Review the fundamentals of the most important missing skill."
+  ],
+  "project_ideas": [
+    "Build a project related to the target role."
+  ]
+}
+`;
+
+/* =========================================
+   3. PDF WORKER CONFIGURATION
+   ========================================= */
+
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+
+/* =========================================
+   4. RESUME FILE UPLOAD
+   Supports PDF, DOCX, and TXT
+   ========================================= */
+
+const resumeFileInput = document.getElementById("resumeFile");
+const uploadStatus = document.getElementById("uploadStatus");
+const resumeTextarea = document.getElementById("resume");
+
+resumeFileInput.addEventListener("change", async function () {
+  const file = this.files[0];
+  if (!file) return;
+
+  const extension = file.name.split(".").pop().toLowerCase();
+  const maxFileSize = 10 * 1024 * 1024;
+
+  if (file.size > maxFileSize) {
+    uploadStatus.textContent = "❌ File is too large. Choose a file under 10 MB.";
+    this.value = "";
+    return;
+  }
+
+  uploadStatus.textContent = "Reading your resume...";
+
+  try {
+    let extractedText = "";
+
+    if (extension === "txt") {
+      extractedText = await file.text();
+
+    } else if (extension === "pdf") {
+      if (!window.pdfjsLib) {
+        throw new Error("PDF reader could not load. Check your internet connection.");
+      }
+
+      const buffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({
+        data: new Uint8Array(buffer)
+      }).promise;
+
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+        const page = await pdf.getPage(pageNumber);
+        const content = await page.getTextContent();
+        extractedText += content.items.map(item => item.str).join(" ") + "\n";
+      }
+
+    } else if (extension === "docx") {
+      if (!window.mammoth) {
+        throw new Error("Word document reader could not load. Check your internet connection.");
+      }
+
+      const buffer = await file.arrayBuffer();
+      const docResult = await mammoth.extractRawText({ arrayBuffer: buffer });
+      extractedText = docResult.value;
+
+    } else {
+      throw new Error("Please select a PDF, DOCX, or TXT file.");
+    }
+
+    if (!extractedText.trim()) {
+      throw new Error("No readable text was found. Scanned PDFs may require OCR.");
+    }
+
+    resumeTextarea.value = extractedText;
+    uploadStatus.textContent = "✅ " + file.name + " uploaded successfully.";
+
+  } catch (error) {
+    uploadStatus.textContent = "❌ " + error.message;
+  }
+});
+
+/* =========================================
+   5. HTML ESCAPING
+   ========================================= */
+
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, character => {
+    const entities = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    };
+    return entities[character];
+  });
+}
+
+/* =========================================
+   6. ANALYZE RESUME WITH GEMINI
+   ========================================= */
+
+async function analyzeResume() {
+  const resume = resumeTextarea.value.trim();
+  const jobDesc = document.getElementById("jobDesc").value.trim();
+  const resultsDiv = document.getElementById("results");
+  const analyzeBtn = document.getElementById("analyzeBtn");
+  const skillSection = document.getElementById("skillGapSection");
+
+  skillSection.hidden = true;
+
+  if (!resume || !jobDesc) {
+    resultsDiv.innerHTML = `
+      <div class="error-box">
+        <strong>Please provide both your resume and the job description.</strong>
+      </div>`;
+    return;
+  }
+
+  if (resume.length < 50 || jobDesc.length < 50) {
+    resultsDiv.innerHTML = `
+      <div class="error-box">
+        <strong>Your resume and job description must each contain at least 50 characters.</strong>
+      </div>`;
+    return;
+  }
+
+  // Gemini API requests will be handled by our secure backend.
+
+  analyzeBtn.disabled = true;
+  analyzeBtn.textContent = "⏳ AI is analyzing...";
+
+  resultsDiv.innerHTML = `
+    <div class="loading">
+      <div class="spinner"></div>
+      <p><strong>Analyzing your resume and skill gaps...</strong></p>
+      <p>Please wait while Gemini processes your information.</p>
+    </div>`;
+
+  try {
+    const userPrompt = `
+RESUME:
+${resume}
+
+JOB DESCRIPTION:
+${jobDesc}
+
+Compare the resume with the job description.
+Return the complete JSON object requested in the system prompt.
+Include all skill gap fields.
+`;
+    const response = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        resume,
+        jobDesc,
+        systemPrompt: SYSTEM_PROMPT,
+        userPrompt
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+    data.error ||
+    `Analysis request failed with status ${response.status}.`
+      );
+    }
+
+    const aiResponse = data.text;
+
+    if (typeof aiResponse !== "string" || !aiResponse.trim()) {
+      throw new Error("The backend returned no analysis. Please try again.");
+    }
+
+    const cleanedResponse = aiResponse
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/, "")
+      .trim();
+
+    const analysis = JSON.parse(cleanedResponse);
+
+    if (typeof analysis.ats_score !== "number") {
+      throw new Error("The AI response did not include a valid ATS score.");
+    }
+
+    // Display the original resume analysis.
+    displayResults(analysis);
+
+    // Display the new advanced skill gap analysis.
+    renderSkillGapAnalysis(analysis);
+
+  } catch (error) {
+    skillSection.hidden = true;
+    resultsDiv.innerHTML = `
+      <div class="error-box">
+        <strong>❌ Analysis failed</strong>
+        <p style="margin-top: 8px;">${escapeHTML(error.message)}</p>
+        <p style="margin-top: 8px; font-size: 13px;">
+          Check your API key, model availability, internet connection, and API quota.
+        </p>
+      </div>`;
+  } finally {
+    analyzeBtn.disabled = false;
+    analyzeBtn.textContent = "🚀 Analyze Resume";
+  }
+}
+
+/* =========================================
+   7. DISPLAY ORIGINAL ANALYSIS RESULTS
+   ========================================= */
+
+function displayResults(analysis) {
+  const resultsDiv = document.getElementById("results");
+
+  const score = Math.max(0, Math.min(100, Number(analysis.ats_score) || 0));
+
+  let scoreColor = "var(--danger)";
+  let scoreMessage = "Low match — major revisions may be needed.";
+
+  if (score >= 80) {
+    scoreColor = "var(--success)";
+    scoreMessage = "Excellent match! Your resume aligns well.";
+  } else if (score >= 60) {
+    scoreColor = "var(--warning)";
+    scoreMessage = "Good match — some improvements may help.";
+  } else if (score >= 40) {
+    scoreMessage = "Fair match — consider improving your resume.";
+  }
+
+  const strengths = Array.isArray(analysis.strengths) ? analysis.strengths : [];
+  const missingKeywords = Array.isArray(analysis.missing_keywords)
+    ? analysis.missing_keywords : [];
+  const improvements = Array.isArray(analysis.improvements)
+    ? analysis.improvements : [];
+
+  resultsDiv.innerHTML = `
+    <div class="result-card score-card">
+      <h4>🎯 ATS Match Score</h4>
+      <div class="score-circle" style="--score-color:${scoreColor}">
+        <div class="score-number" style="color:${scoreColor}">${score}</div>
+        <div class="score-label">out of 100</div>
+      </div>
+      <p class="score-message">${escapeHTML(scoreMessage)}</p>
+    </div>
+
+    <div class="result-card">
+      <h4>📝 AI Summary</h4>
+      <p>${escapeHTML(analysis.summary || "No summary provided.")}</p>
+    </div>
+
+    <div class="result-card">
+      <h4>✅ Resume Strengths</h4>
+      <ul class="insight-list">
+        ${strengths.length
+          ? strengths.map(item => `<li>${escapeHTML(item)}</li>`).join("")
+          : "<li>No strengths were provided.</li>"}
+      </ul>
+    </div>
+
+    <div class="result-card">
+      <h4>🔎 Missing Keywords</h4>
+      <p style="font-size:13px; margin-bottom:12px;">
+        Add these only when they accurately reflect your skills and experience.
+      </p>
+      <div class="keyword-list">
+        ${missingKeywords.length
+          ? missingKeywords.map(item => `<span class="keyword">${escapeHTML(item)}</span>`).join("")
+          : "<span>No missing keywords were identified.</span>"}
+      </div>
+    </div>
+
+    <div class="result-card">
+      <h4>💡 Recommended Improvements</h4>
+      <ul class="insight-list">
+        ${improvements.length
+          ? improvements.map(item => `<li>${escapeHTML(item)}</li>`).join("")
+          : "<li>No improvements were provided.</li>"}
+      </ul>
+    </div>
+
+    <div class="tips-box">
+      <strong>🎯 Next Steps:</strong>
+      Use the relevant suggestions to improve your resume, then analyze it again.
+    </div>`;
+
+  resultsDiv.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* =========================================
+   8. ADVANCED SKILL GAP ANALYSIS
+   ========================================= */
+
+function renderSkillGapAnalysis(data) {
+  const section = document.getElementById("skillGapSection");
+  const matchedContainer = document.getElementById("matchedSkills");
+  const gapsContainer = document.getElementById("skillGaps");
+  const learningContainer = document.getElementById("learningPlan");
+  const projectsContainer = document.getElementById("projectIdeas");
+
+  if (!data || !Array.isArray(data.matched_skills) ||
+      !Array.isArray(data.skill_gaps)) {
+    section.hidden = true;
+    return;
+  }
+
+  matchedContainer.replaceChildren();
+  gapsContainer.replaceChildren();
+  learningContainer.replaceChildren();
+  projectsContainer.replaceChildren();
+
+  data.matched_skills.forEach(skill => {
+    const chip = document.createElement("span");
+    chip.className = "skill-chip";
+    chip.textContent = typeof skill === "string"
+      ? skill : (skill.skill || "Skill");
+    matchedContainer.appendChild(chip);
+  });
+
+  data.skill_gaps.forEach(gap => {
+    const card = document.createElement("article");
+    card.className = "skill-gap-card";
+
+    const title = document.createElement("h4");
+    title.textContent = gap.skill || "Skill to develop";
+
+    const priority = document.createElement("p");
+    const allowedPriorities = ["High", "Medium", "Low"];
+    const level = allowedPriorities.includes(gap.priority)
+      ? gap.priority : "Medium";
+
+    priority.className = `priority-${level.toLowerCase()}`;
+    priority.textContent = `Priority: ${level}`;
+
+    const reason = document.createElement("p");
+    reason.textContent =
+      `Why it matters: ${gap.reason || "Review this job requirement."}`;
+
+    const recommendation = document.createElement("p");
+    recommendation.textContent =
+      `Next step: ${gap.recommendation || "Practice this skill with a project."}`;
+
+    card.append(title, priority, reason, recommendation);
+    gapsContainer.appendChild(card);
+  });
+
+  function renderList(container, items) {
+    items.forEach(item => {
+      const li = document.createElement("li");
+      li.textContent = typeof item === "string"
+        ? item
+        : (item.title || item.recommendation || JSON.stringify(item));
+      container.appendChild(li);
+    });
+  }
+
+  renderList(
+    learningContainer,
+    Array.isArray(data.learning_plan) ? data.learning_plan : []
+  );
+
+  renderList(
+    projectsContainer,
+    Array.isArray(data.project_ideas) ? data.project_ideas : []
+  );
+
+  section.hidden = false;
+}
+</script>
+</body>
+</html>
